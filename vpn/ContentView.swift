@@ -14,6 +14,7 @@ struct ContentView: View {
 }
 
 struct HomeView: View {
+    @State var showSideMenu = false
     var body: some View {
         ZStack{
             Color.appPrimary
@@ -21,31 +22,41 @@ struct HomeView: View {
             
             VStack {
                 
-                TopMenuView()
+                TopMenuView(showSideMenu: $showSideMenu)
                 SpeedTextView()
+                Spacer()
                 ProgressiveView()
-                    .padding(.top, 80)
-                StartStopButtonView()
+                Spacer()
+                Button(action: {
+                    //start speed simul
+                }, label: {
+                    StartStopButtonView()
+                })
+                Spacer()
                 
             }
             .padding(.horizontal)
             .foregroundColor(.white)
-        }
-    }
-}
-
-struct SideMenuView: View {
-    var body: some View {
-        ZStack{
             
+            VStack{
+                Spacer()
+                DropDownView()
+                    .padding(.horizontal, 30)
+            }
+            
+            if showSideMenu {
+                SideMenuView(showSideMenu: $showSideMenu)
+            }
         }
     }
 }
 
 struct TopMenuView: View {
+    @Binding var showSideMenu: Bool
     var body: some View {
         HStack{
             Button(action: {
+                showSideMenu = true
                  // show side menu
             }, label: {
                 VStack{
@@ -67,22 +78,28 @@ struct TopMenuView: View {
                 .padding()
             })
             
-            Text("Abuser")
+            Text("Backyard")
                 .font(.system(size: 18, weight: .black, design: .default))
             Text("VPN")
                 .font(.system(size: 18, weight: .regular, design: .default))
             
             Spacer()
             
-            ZStack{
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(Color.darkPurple)
-                    .frame(width: 135, height: 40)
-                HStack{
-                    Image(systemName: "flame.fill")
-                    Text("GO PREMIUM")
-                        .font(.system(size: 12, weight: .regular))
-                }
+            PremiumView()
+        }
+    }
+}
+
+struct PremiumView: View{
+    var body: some View {
+        ZStack{
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.darkPurple)
+                .frame(width: 135, height: 40)
+            HStack{
+                Image(systemName: "flame.fill")
+                Text("GO PREMIUM")
+                    .font(.system(size: 12, weight: .regular))
             }
         }
     }
@@ -133,17 +150,102 @@ struct ProgressiveView: View {
 struct StartStopButtonView: View {
     var body: some View {
         ZStack{
+            RoundedRectangle(cornerRadius: 25)
+                .fill(Color.darkPurple)
+                .frame(width: 110, height: 50)
+            HStack{
+                Image(systemName: "power")
+                    .font(.system(size: 18, weight: .black))
+                Text("Power")
+                    .font(.system(size: 18, weight: .regular))
+            }
         }
     }
 }
 
 struct DropDownView: View {
+    @StateObject var dropDownManager = DropDownManager()
     var body: some View {
         ZStack{
-            
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.dropDown)
+                .frame(height: dropDownManager.expanded ? 300 : 60)
+            HStack(alignment: .top){
+                if !dropDownManager.expanded {
+                    RegionItemView(region: dropDownManager.regions[dropDownManager.selectedIndex])
+                        .onTapGesture {
+                            withAnimation{dropDownManager.expandCollapseView() }
+                        }
+                } else {
+                    VStack(spacing: 0){
+                    ForEach(dropDownManager.regions) { region in
+                        RegionItemView(region: region)
+                            .onTapGesture {
+                                withAnimation{dropDownManager.selectedItem(region: region)}
+                            }
+                    }
+                    }
+                }
+                
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.white)
+                    .rotationEffect(dropDownManager.expanded  ? .degrees(180) : .zero)
+                    .padding()
+                    .padding(.top, 10)
+                    .onTapGesture {
+                        withAnimation{dropDownManager.expandCollapseView()}
+                    }
+            }
+            .padding()
         }
     }
 }
+
+struct RegionItemView: View {
+    let region: Region
+    var body: some View {
+        ZStack {
+            Rectangle()
+                .fill(Color.white.opacity(0.01))
+                .frame(height: 60)
+            
+            HStack(spacing: 16) {
+                Text(region.imageName)
+                    .font(.system(size: 55))
+                    .fixedSize()
+                    .frame(width: 30, height: 30)
+                    .cornerRadius(15)
+                
+                Text(region.name)
+                    .bold()
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                ZStack(alignment: .leading){
+                    HStack(spacing: 2){
+                        ForEach(Array(stride(from: 0, to: 5, by: 1)), id: \.self) { _ in
+                            Rectangle()
+                                .fill(Color.gray)
+                                .frame(width: 6, height: 6)
+                        }
+                    }
+                    
+                    HStack(spacing: 2){
+                        ForEach(Array(stride(from: 0, to: region.strenght, by: 1)), id: \.self) { _ in
+                            Rectangle()
+                                .fill(Color.green)
+                                .frame(width: 6, height: 6)
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal)
+        }
+    }
+}
+
 
 extension UIScreen {
     static let screenWidth = UIScreen.main.bounds.width
