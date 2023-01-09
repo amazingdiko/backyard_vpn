@@ -15,6 +15,7 @@ struct ContentView: View {
 
 struct HomeView: View {
     @State var showSideMenu = false
+    @StateObject var speedSimulator = SpeedSimultor()
     var body: some View {
         ZStack{
             Color.appPrimary
@@ -23,14 +24,15 @@ struct HomeView: View {
             VStack {
                 
                 TopMenuView(showSideMenu: $showSideMenu)
-                SpeedTextView()
+                SpeedTextView(speedSimulator: speedSimulator)
                 Spacer()
-                ProgressiveView()
+                ProgressiveView(speedSimulator: speedSimulator)
                 Spacer()
                 Button(action: {
+                    speedSimulator.startSpeedTest()
                     //start speed simul
                 }, label: {
-                    StartStopButtonView()
+                    StartStopButtonView(speedSimulator: speedSimulator)
                 })
                 Spacer()
                 
@@ -46,6 +48,7 @@ struct HomeView: View {
             
             if showSideMenu {
                 SideMenuView(showSideMenu: $showSideMenu)
+                    .foregroundColor(.white)
             }
         }
     }
@@ -106,10 +109,12 @@ struct PremiumView: View{
 }
 
 struct SpeedTextView: View {
+    @ObservedObject var speedSimulator: SpeedSimultor
     var body: some View {
         VStack{
-            Text("35.12")
+            Text(String(format: "%.2f", speedSimulator.calculatedSpeed))
                 .font(.system(size: 40, weight: .semibold))
+                .animation(.none)
             Text("mb/s")
                 .font(.system(size: 16, weight: .light ))
         }
@@ -117,6 +122,7 @@ struct SpeedTextView: View {
 }
 
 struct ProgressiveView: View {
+    @ObservedObject var speedSimulator: SpeedSimultor
     var body: some View {
         ZStack{
             Circle()
@@ -136,7 +142,7 @@ struct ProgressiveView: View {
             
             
             Circle()
-                .trim(from: 0.1, to: 0.5)
+                .trim(from: 0.1, to: speedSimulator.progress)
                 .stroke(LinearGradient(gradient: Gradient(colors: [Color.progress, Color.progress.opacity(0.01)]),
                                        startPoint: .leading,
                                        endPoint: .trailing),
@@ -148,15 +154,16 @@ struct ProgressiveView: View {
 }
 
 struct StartStopButtonView: View {
+    @ObservedObject var speedSimulator: SpeedSimultor
     var body: some View {
         ZStack{
             RoundedRectangle(cornerRadius: 25)
-                .fill(Color.darkPurple)
+                .fill(speedSimulator.start ? Color.stopColor : Color.darkPurple)
                 .frame(width: 110, height: 50)
             HStack{
                 Image(systemName: "power")
                     .font(.system(size: 18, weight: .black))
-                Text("Power")
+                Text(speedSimulator.start ? "Stop" : "Start")
                     .font(.system(size: 18, weight: .regular))
             }
         }
@@ -197,7 +204,7 @@ struct DropDownView: View {
                         withAnimation{dropDownManager.expandCollapseView()}
                     }
             }
-            .padding()
+//            .padding()
         }
     }
 }
@@ -245,6 +252,7 @@ struct RegionItemView: View {
         }
     }
 }
+
 
 
 extension UIScreen {
